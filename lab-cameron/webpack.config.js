@@ -10,8 +10,8 @@ dotenv.load();
 
 const production = process.env.NODE_ENV === 'production';
 
-const plugins = [
-  new ExtractTextPlugin('bundle.css'),
+let plugins = [
+  new ExtractTextPlugin('bundle-[hash].css'),
   new HTMLPlugin({ template: `${__dirname}/app/index.html` }),
   new webpack.DefinePlugin({
     __API_URL__: JSON.stringify(process.env.API_URL),
@@ -20,43 +20,48 @@ const plugins = [
 ];
 
 if (production) {
-  let plugins = plugins.concat([
+  plugins = plugins.concat([
+    new CleanPlugin(),
     new webpack.optimize.UglifyJsPlugin({
       mangle: true,
       compress: {
         warnings: false,
       },
     }),
-    new CleanPlugin(),
   ]);
 }
 
 module.exports = {
+  plugins,
   entry: `${__dirname}/app/entry.js`,
   output: {
-    filename: 'bundle.js',
+    filename: 'bundle-[hash].js',
     path: `${__dirname}/build`,
+    publicPath: process.env.CDN_URL,
   },
-  plugins,
+  devServer: {
+    historyApiFallback: true,
+  },
   devtool: production ? false : 'source-map',
   module: {
-    loaders: [
+    rules: [
       {
         test: /\.js$/,
         exclude: /node_modules/,
-        use: 'babel-loader',
+        loader: 'babel-loader',
       },
       {
         test: /\.html$/,
-        use: 'html-loader',
+        loader: 'html-loader',
       },
       {
         test: /\.(eot|ttf|woff|svg).*/,
-        use: 'url?limit=10000&name=image/[hash].[ext]',
+        loader: 'url-loader?limit=60000&name=font/[name].[ext]',
       },
       {
         test: /\.scss$/,
-        use: [
+        // loader: ExtractTextPlugin.extract(['css-loader', 'sass-loader']),
+        loader: [
           {
             loader: 'css-loader',
             options: { sourceMap: true },
@@ -69,6 +74,10 @@ module.exports = {
             },
           },
         ],
+      },
+      {
+        test: /\.(jpg|jpeg|tiff|png|gif)$/,
+        loader: 'url-loader?limit=60000&name=image/[name].[ext]',
       },
     ],
   },

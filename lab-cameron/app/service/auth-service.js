@@ -1,7 +1,5 @@
 'use strict';
 
-const __API_URL__ = process.env.__API_URL__ || 'http://localhost:3000';
-
 module.exports = [
   '$q',
   '$log',
